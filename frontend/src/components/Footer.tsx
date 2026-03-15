@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 
 const mode = import.meta.env.VITE_APP_MODE || 'exchange';
-const exchangeUrl = import.meta.env.VITE_EXCHANGE_FRONTEND_URL || `${window.location.protocol}//${window.location.hostname}:15173`;
+const exchangeUrl = import.meta.env.VITE_EXCHANGE_FRONTEND_URL || 'https://vceapp.com';
 
 const FooterContainer = styled.footer`
   background-color: white;

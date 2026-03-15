@@ -5,7 +5,7 @@ import axios from 'axios';
 import { clearUserSession, getUserAccessToken, getUserRefreshToken } from '../utils/auth';
 
 const mode = import.meta.env.VITE_APP_MODE || 'exchange';
-const exchangeUrl = import.meta.env.VITE_EXCHANGE_FRONTEND_URL || `${window.location.protocol}//${window.location.hostname}:15173`;
+const exchangeUrl = import.meta.env.VITE_EXCHANGE_FRONTEND_URL || 'https://vceapp.com';
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 // Header.tsx (스타일만 교체/추가)

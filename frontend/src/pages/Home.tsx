@@ -11,7 +11,7 @@ import { useUpbitTicker } from '../hooks/useUpbitWebSocket';
 import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-const bankUrl = import.meta.env.VITE_BANK_FRONTEND_URL || `${window.location.protocol}//${window.location.hostname}:15174`;
+const bankUrl = import.meta.env.VITE_BANK_FRONTEND_URL || 'https://bank.vceapp.com';
 
 const MainContainer = styled.div`
   min-height: 100vh;

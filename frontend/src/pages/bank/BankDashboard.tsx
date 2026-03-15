@@ -5,7 +5,7 @@ import axios from 'axios';
 import { clearUserSession, getUserAccessToken } from '../../utils/auth';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-const exchangeUrl = import.meta.env.VITE_EXCHANGE_FRONTEND_URL || `${window.location.protocol}//${window.location.hostname}:15173`;
+const exchangeUrl = import.meta.env.VITE_EXCHANGE_FRONTEND_URL || 'https://vceapp.com';
 
 const PageContainer = styled.div`
   min-height: 100vh;
