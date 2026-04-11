@@ -320,9 +320,8 @@ class VulnScannerGUI:
         self._shdr(p, "REPORT FORMAT")
         rr = tk.Frame(p, bg=C_CARD)
         rr.pack(fill=tk.X, padx=16, pady=(4, 2))
-        for var, lbl in [(self.rpt_excel, "Excel (.xlsx)"), (self.rpt_md, "Markdown (.md)")]:
-            ttk.Checkbutton(rr, text=lbl, variable=var).pack(side=tk.LEFT, padx=(0, 14))
-        _lbl(p, "  ※ 로그(.txt)는 항상 자동 저장", C_CARD, C_MUTE, 8).pack(anchor=tk.W, padx=16, pady=(0, 12))
+        ttk.Checkbutton(rr, text="Markdown (.md)", variable=self.rpt_md).pack(side=tk.LEFT, padx=(0, 14))
+        _lbl(p, "  ※ Excel·로그(.log)·TXT(.txt) 항상 자동 저장", C_CARD, C_MUTE, 8).pack(anchor=tk.W, padx=16, pady=(0, 12))
 
         # ── RUN BUTTON (fixed bottom) ────────────────────────────────────────
         bot = tk.Frame(parent, bg=C_DEEP)
@@ -334,6 +333,11 @@ class VulnScannerGUI:
             activebackground=C_GOLD2, activeforeground=C_BG,
             command=self._start_scan)
         self.run_btn.pack(fill=tk.X)
+        tk.Button(bot, text="📋  명령어 추출",
+            bg=C_LINE, fg=C_TEAL, relief=tk.FLAT, font=(_UI, 9),
+            pady=7, cursor="hand2",
+            activebackground=C_LINE2, activeforeground=C_TEAL,
+            command=self._open_export_dialog).pack(fill=tk.X)
 
         self._on_mod()
 
@@ -857,7 +861,7 @@ class VulnScannerGUI:
             self.stat_lbl[key] = v
 
         self.save_frame = tk.Frame(inner, bg=C_DEEP)
-        for lbl, fmt in [("📊 Excel","excel"),("📝 Markdown","md"),("📋 Log","log")]:
+        for lbl, fmt in [("📊 Excel","excel"),("📝 Markdown","md"),("📋 TXT","txt")]:
             ttk.Button(self.save_frame, text=lbl, style="Save.TButton",
                        command=lambda f=fmt: self._save(f)).pack(side=tk.LEFT, padx=2)
 
@@ -893,6 +897,94 @@ class VulnScannerGUI:
         for l in self.stat_lbl.values(): l.config(text="—")
         self.save_frame.pack_forget()
         self.sev_lbl.config(text="")
+
+    # ── Command export dialog ─────────────────────────────────────────────────
+    def _open_export_dialog(self):
+        from export_commands import GUIDE_COMMANDS, export_text, export_excel
+
+        guide     = self.guide_key.get()
+        guide_lbl = "SK Shieldus 표준" if guide == "sk" else "주통기 2026"
+        domains   = list(GUIDE_COMMANDS[guide].keys())
+
+        win = tk.Toplevel(self.root)
+        win.title(f"명령어 추출  —  {guide_lbl}")
+        win.configure(bg=C_BG)
+        win.resizable(False, False)
+        win.grab_set()
+
+        # ── header
+        hf = tk.Frame(win, bg=C_DEEP); hf.pack(fill=tk.X)
+        tk.Label(hf, text=f"📋  명령어 추출  ({guide_lbl})",
+                 bg=C_DEEP, fg=C_GOLD, font=(_UI, 12, "bold"),
+                 pady=12, padx=16).pack(side=tk.LEFT)
+        tk.Frame(win, bg=C_LINE, height=1).pack(fill=tk.X)
+
+        body = tk.Frame(win, bg=C_CARD); body.pack(fill=tk.BOTH, padx=0, pady=0)
+
+        # ── domain checkboxes
+        tk.Label(body, text="도메인 선택", bg=C_CARD, fg=C_GOLD,
+                 font=(_UI, 9, "bold")).pack(anchor=tk.W, padx=20, pady=(14, 4))
+        dom_vars = {}
+        for d in domains:
+            v = tk.BooleanVar(value=True)
+            dom_vars[d] = v
+            ttk.Checkbutton(body, text=d, variable=v).pack(anchor=tk.W, padx=32, pady=1)
+
+        tk.Frame(body, bg=C_LINE, height=1).pack(fill=tk.X, padx=20, pady=(10, 0))
+
+        # ── format checkboxes
+        tk.Label(body, text="출력 형식", bg=C_CARD, fg=C_GOLD,
+                 font=(_UI, 9, "bold")).pack(anchor=tk.W, padx=20, pady=(10, 4))
+        fmt_excel = tk.BooleanVar(value=True)
+        fmt_text  = tk.BooleanVar(value=True)
+        ttk.Checkbutton(body, text="Excel (.xlsx)", variable=fmt_excel).pack(anchor=tk.W, padx=32, pady=1)
+        ttk.Checkbutton(body, text="텍스트 (.txt)", variable=fmt_text).pack(anchor=tk.W, padx=32, pady=1)
+
+        tk.Frame(body, bg=C_LINE, height=1).pack(fill=tk.X, padx=20, pady=(10, 0))
+
+        # ── status label
+        status_lbl = tk.Label(body, text="", bg=C_CARD, fg=C_MUTE, font=(_UI, 8))
+        status_lbl.pack(anchor=tk.W, padx=20, pady=(6, 0))
+
+        def do_export():
+            sel = [d for d, v in dom_vars.items() if v.get()]
+            if not sel:
+                messagebox.showwarning("선택 없음", "최소 하나 이상의 도메인을 선택하세요.", parent=win)
+                return
+            if not fmt_excel.get() and not fmt_text.get():
+                messagebox.showwarning("형식 없음", "출력 형식을 하나 이상 선택하세요.", parent=win)
+                return
+            out_dir = filedialog.askdirectory(title="저장 폴더 선택", parent=win)
+            if not out_dir:
+                return
+            import os
+            prefix = os.path.join(out_dir, f"commands_{guide}")
+            saved = []
+            try:
+                if fmt_excel.get():
+                    p = prefix + ".xlsx"
+                    export_excel(p, guide=guide, domains=sel)
+                    saved.append(os.path.basename(p))
+                if fmt_text.get():
+                    p = prefix + ".txt"
+                    export_text(p, guide=guide, domains=sel)
+                    saved.append(os.path.basename(p))
+                status_lbl.config(text=f"저장 완료: {', '.join(saved)}", fg=C_GREEN)
+                messagebox.showinfo("완료", f"명령어가 저장되었습니다.\n\n" + "\n".join(saved), parent=win)
+            except Exception as e:
+                status_lbl.config(text=f"오류: {e}", fg=C_RED)
+                messagebox.showerror("오류", str(e), parent=win)
+
+        # ── buttons
+        bf = tk.Frame(body, bg=C_CARD); bf.pack(fill=tk.X, padx=20, pady=(10, 16))
+        tk.Button(bf, text="추출", bg=C_GOLD, fg=C_BG, relief=tk.FLAT,
+                  font=(_UI, 10, "bold"), padx=20, pady=7, cursor="hand2",
+                  activebackground=C_GOLD2, activeforeground=C_BG,
+                  command=do_export).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Button(bf, text="닫기", bg=C_LINE, fg=C_SUB, relief=tk.FLAT,
+                  font=(_UI, 10), padx=16, pady=7, cursor="hand2",
+                  activebackground=C_LINE2, activeforeground=C_FG,
+                  command=win.destroy).pack(side=tk.LEFT)
 
     # ── Scan ──────────────────────────────────────────────────────────────────
     def _start_scan(self):
@@ -942,9 +1034,12 @@ class VulnScannerGUI:
             report   = scanner.run()
             self._report = report
 
-            saved = [f"로그: {reporter.save_log(report)}"]
-            if self.rpt_excel.get(): saved.append(f"Excel: {reporter.save_excel(report)}")
-            if self.rpt_md.get():    saved.append(f"Markdown: {reporter.save_markdown(report)}")
+            saved = [
+                f"로그  : {reporter.save_cmd_log(report)}",
+                f"TXT   : {reporter.save_log(report)}",
+                f"Excel : {reporter.save_excel(report)}",
+            ]
+            if self.rpt_md.get(): saved.append(f"Markdown: {reporter.save_markdown(report)}")
             print("\n" + "─"*60)
             print("  완료")
             for s in saved: print(f"  ✓ {s}")
@@ -1339,7 +1434,8 @@ class VulnScannerGUI:
         try:
             p = (reporter.save_excel(self._report)   if fmt == "excel" else
                  reporter.save_markdown(self._report) if fmt == "md"    else
-                 reporter.save_log(self._report))
+                 reporter.save_log(self._report)      if fmt == "txt"   else
+                 reporter.save_cmd_log(self._report))
             messagebox.showinfo("저장 완료", f"저장되었습니다:\n{p}")
         except Exception as e:
             messagebox.showerror("저장 오류", str(e))
@@ -1354,10 +1450,78 @@ class VulnScannerGUI:
         if p: var.set(p)
 
 
+def _make_app_icon(root, size=64):
+    """런타임에 방패 모양 아이콘을 생성하여 PhotoImage 반환."""
+    img = tk.PhotoImage(width=size, height=size)
+    cx  = size // 2
+
+    BG    = "#0b0e11"
+    GOLD  = "#f0b90b"
+    DARK  = "#1e2026"
+    WHITE = "#eaecef"
+    bw    = max(3, size // 20)
+
+    def in_shield(x, y):
+        nx = x - cx
+        top, mid, bot = size // 8, int(size * 0.59), int(size * 0.89)
+        if y < top or y > bot: return False
+        if y <= mid:
+            return abs(nx) <= int(size * 0.34)
+        t = (y - mid) / max(1, bot - mid)
+        return abs(nx) <= int(size * 0.34 * (1 - t))
+
+    def in_inner(x, y):
+        nx = x - cx
+        top, mid, bot = size // 8 + bw, int(size * 0.59) - bw, int(size * 0.89) - bw
+        if y < top or y > bot: return False
+        hw = int(size * 0.34) - bw
+        if y <= mid:
+            return abs(nx) <= hw
+        t = (y - mid) / max(1, int(size * 0.89) - bw - mid)
+        half = hw * (1 - t)
+        return half > bw and abs(nx) <= half
+
+    def dist_seg(px, py, x1, y1, x2, y2):
+        dx, dy = x2 - x1, y2 - y1
+        l2 = dx * dx + dy * dy
+        if l2 == 0:
+            return ((px - x1) ** 2 + (py - y1) ** 2) ** 0.5
+        t = max(0.0, min(1.0, ((px - x1) * dx + (py - y1) * dy) / l2))
+        return ((px - (x1 + t * dx)) ** 2 + (py - (y1 + t * dy)) ** 2) ** 0.5
+
+    lw  = max(2.5, size / 24)
+    lx1, ly1 = int(cx * 0.62), int(size * 0.57)
+    lx2, ly2 = int(cx * 0.88), int(size * 0.71)
+    lx3, ly3 = int(cx * 1.44), int(size * 0.42)
+
+    def in_check(x, y):
+        return (dist_seg(x, y, lx1, ly1, lx2, ly2) <= lw or
+                dist_seg(x, y, lx2, ly2, lx3, ly3) <= lw)
+
+    rows = []
+    for y in range(size):
+        row = []
+        for x in range(size):
+            if in_shield(x, y):
+                if in_inner(x, y):
+                    row.append(WHITE if in_check(x, y) else DARK)
+                else:
+                    row.append(GOLD)
+            else:
+                row.append(BG)
+        rows.append("{" + " ".join(row) + "}")
+    img.put("{" + " ".join(rows) + "}")
+    return img
+
+
 def main():
     root = tk.Tk()
-    try: root.iconbitmap("icon.ico")
-    except: pass
+    try:
+        _icon = _make_app_icon(root, 64)
+        root.iconphoto(True, _icon)
+    except Exception:
+        try: root.iconbitmap("icon.ico")
+        except: pass
     VulnScannerGUI(root)
     root.mainloop()
 

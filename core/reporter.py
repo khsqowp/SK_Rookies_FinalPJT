@@ -81,13 +81,37 @@ def _sections(report: ScanReport) -> dict[str, list]:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# Log  ── 명령어 + 결과값 + 판정 모두 포함
+# Cmd-Log  ── 명령어 + 실행 결과만 (자동 저장용 간결 로그)
+# ══════════════════════════════════════════════════════════════════════
+
+def save_cmd_log(report: ScanReport) -> str:
+    """명령어와 실행 결과 로우 데이터만 저장 (자동 저장)."""
+    _ensure_dir()
+    path  = _filename(report, "log")
+    lines: list[str] = []
+
+    for r in report.results:
+        if not r.command and not r.cmd_output:
+            continue
+        if r.command:
+            lines.append(r.command.strip())
+        if r.cmd_output:
+            lines.append(r.cmd_output.strip())
+        lines.append("")
+
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    return path
+
+
+# ══════════════════════════════════════════════════════════════════════
+# Log  ── 명령어 + 결과값 + 판정 모두 포함 (TXT 버튼 저장용)
 # ══════════════════════════════════════════════════════════════════════
 
 def save_log(report: ScanReport) -> str:
-    """섹션별·항목별로 진단 명령어·결과값·판정을 포함하는 텍스트 로그 저장."""
+    """섹션별·항목별로 진단 명령어·결과값·판정을 포함하는 상세 텍스트 저장."""
     _ensure_dir()
-    path = _filename(report, "log")
+    path = _filename(report, "txt")
     s = report.summary
     W = 70
 
