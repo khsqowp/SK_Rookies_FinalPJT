@@ -1,248 +1,141 @@
-# 프로젝트 통합 소개 및 브랜치 가이드 — VCE / VulnScanner
+# AI Scanner
 
-- **프로젝트명**: 클라우드 구축을 통한 취약점 진단 및 모의해킹 프로젝트
-- **작성일**: 2026-04-14
-- **Main 브랜치 역할**: 전체 프로젝트 구조와 세부 브랜치를 설명하는 통합 README
-- **구성 브랜치**: `secure-web` / `vul-web` / `auto-script`
+AI 기반 웹 취약점 자동진단 문서 세트입니다. 이 디렉터리는 통합 프로젝트 소개가 아니라, AI가 웹 애플리케이션을 대상으로 정찰, 퍼징, 검증, 분류, 보고서화까지 수행하는 진단 절차 자체를 설명하기 위한 공간입니다.
 
----
+현재 구성은 실제 실행 코드 저장소라기보다, AI 진단 에이전트가 어떤 기준으로 움직이고 어떤 산출물을 남겨야 하는지 정의한 운영 문서에 가깝습니다. 따라서 이 브랜치 또는 디렉터리를 볼 때는 "서비스 소개"보다 "AI 진단 체계"를 읽는 관점이 맞습니다.
 
-## 브랜치 바로가기
-
-- [취약한 웹 소스코드 (`vul-web`)](https://github.com/khsqowp/SK_Rookies_FinalPJT/tree/vul-web)
-- [안전한 웹 소스코드 (`secure-web`)](https://github.com/khsqowp/SK_Rookies_FinalPJT/tree/secure-web)
-- [자동화 스크립트 소스코드 (`auto-script`)](https://github.com/khsqowp/SK_Rookies_FinalPJT/tree/auto-script)
+이 AI 자동진단 체계는 Claude Code를 중심으로 설계한 워크플로우를 바탕으로 정리되었습니다. 단순히 AI에게 취약점을 찾아보라고 지시하는 방식이 아니라, Claude Code가 Phase별 역할을 나눠 정찰, 벡터별 탐지, 실증 검증, 위험도 분류, 최종 보고서 작성까지 순차적으로 수행하도록 문서화한 구조입니다. 따라서 이 README와 하위 Phase 문서들은 "Claude Code로 어떻게 웹 취약점 진단을 운영할 것인가"를 설명하는 작업 기준서에 가깝습니다.
 
 ---
 
 ## 개요
 
-이 프로젝트는 하나의 결과물만 설명하는 저장소가 아니라, 취약한 웹 서비스의 구현, 취약점 분석과 이행 조치, 그리고 취약점 진단 자동화 도구까지 하나의 흐름으로 묶어 설명하는 통합형 프로젝트입니다. 즉, "취약한 서비스가 어떻게 구성되었는가", "어떤 취약점이 있었는가", "그 취약점을 어떻게 줄였는가", "이 과정을 자동화 도구 관점에서는 어떻게 확장할 수 있는가"를 함께 보여주는 구조입니다.
+AI Scanner는 웹 애플리케이션 보안 진단을 단계별로 자동화하기 위한 문서 기반 프레임워크입니다. 대상 시스템의 엔드포인트를 수집하고, 공격 벡터별로 프로브를 전송하고, 의심 신호를 재검증한 뒤, 확정 취약점을 위험도와 표준 분류 체계에 맞춰 보고서로 정리하는 흐름을 기준으로 설계되어 있습니다.
 
-전체 흐름은 세 개의 브랜치로 나뉩니다. `vul-web`은 취약점 진단과 모의해킹 실습을 위해 만든 이행 전 취약 웹사이트 브랜치입니다. `secure-web`은 같은 서비스 구조를 바탕으로 취약점을 조치하고 보안 설정을 강화한 이행 후 안전 웹사이트 브랜치입니다. `auto-script`는 OS, 웹서버, DBMS, 클라우드 환경을 대상으로 진단 항목을 자동화하는 취약점 진단 스크립트 및 GUI 도구 브랜치입니다.
+이 구조는 단순한 취약점 스크립트 모음과 다릅니다. 정찰 단계에서 수집한 정보를 기반으로 다음 단계의 테스트 우선순위를 정하고, 퍼징 단계에서는 모든 엔드포인트와 공격 벡터를 가능한 한 빠짐없이 훑고, 검증 단계에서는 실제 HTTP 응답과 권한 매트릭스를 바탕으로 오탐과 확정 취약점을 구분합니다. 마지막으로 분류 단계에서는 CVSS, CWE, OWASP, SK 진단 항목 기준으로 위험도를 표준화하고, 보고서 단계에서 실무자가 바로 전달 가능한 Markdown 산출물로 정리합니다.
 
-따라서 `main` 브랜치는 실제 개발이 이뤄지는 작업 브랜치라기보다, 세 브랜치의 역할과 관계를 설명하는 통합 안내 브랜치로 보는 것이 맞습니다. 취약 웹사이트와 안전 웹사이트를 비교해보려면 `vul-web`과 `secure-web`을 보면 되고, 자동 진단 도구를 확인하려면 `auto-script`를 보면 됩니다.
+즉 이 디렉터리의 목적은 "AI가 어떻게 생각해야 하는가"를 정하는 데 있습니다. 어떤 단계에서 무엇을 해야 하는지, 무엇을 해서는 안 되는지, 어떤 형식으로 기록해야 하는지를 먼저 고정함으로써, 진단 품질과 결과물 형식을 일정하게 유지하려는 방향입니다.
 
 ---
 
-## 1. 프로젝트 구성
+## 목적
 
-| 브랜치 | 역할 | 설명 |
+- 웹 취약점 진단 절차를 Phase 단위로 표준화
+- AI가 임의 판단이 아니라 체크리스트와 근거 기반으로 진단하도록 강제
+- 후보 취약점과 확정 취약점을 분리해 오탐을 줄이는 구조 마련
+- 최종 결과를 SK 진단 항목, OWASP, CWE, CVSS 체계와 연결
+- 실습, 재현, 문서화가 가능한 Markdown 기반 산출물 생성
+
+---
+
+## 진단 대상 범위
+
+AI Scanner는 주로 웹 애플리케이션과 API를 대상으로 합니다. 특히 아래와 같은 항목을 주요 범위로 다룹니다.
+
+- 인증 및 인가
+- 관리자 기능 노출
+- IDOR 및 Broken Access Control
+- XSS, CSRF, SQL Injection
+- Path Traversal, File Upload, Command Injection
+- SSRF, XXE, Open Redirect
+- 비즈니스 로직 결함 및 Race Condition
+- 서버 정보 노출, 보안 헤더, 쿠키/토큰 설정
+
+또한 문서 기준은 SK 진단 항목 체계를 따릅니다. 실제 가이드에서는 XSS, Injection, IDOR, 악성 파일 업로드, 패스워드 정책, 권한 상승 및 ACL 미흡 같은 항목별 판단 기준과 대응 방안이 정의되어 있으며, AI Scanner는 이런 가이드를 자동 진단 흐름으로 연결하는 역할을 합니다.
+
+---
+
+## 전체 진단 흐름
+
+| Phase | 문서 | 역할 |
 |------|------|------|
-| `vul-web` | 이행 전 취약 웹사이트 | 보안 진단 및 모의해킹 실습을 위한 취약한 가상자산 웹 서비스 |
-| `secure-web` | 이행 후 안전 웹사이트 | 취약점 조치, 권한 분리, 입력 검증, 파일 통제, 정보 노출 차단 등을 반영한 개선 버전 |
-| `auto-script` | 자동 진단 스크립트 | OS, WebServer, DBMS, Cloud 환경의 취약점 진단을 자동화하는 도구 |
+| Phase 1 | `Tool_Phase_1.md` | 정찰, 엔드포인트 수집, 환경 추론, 우선순위 설정 |
+| Phase 2 | `Tool_Phase_2.md` | 공격 벡터별 전수 탐침, 후보 취약점 수집 |
+| Phase 3 | `Tool_Phase_3.md` | 인증/인가 및 논리 취약점 심층 검증 |
+| Phase 4 | `Tool_Phase_4.md` | CVSS, CWE, OWASP, SK 항목 기준 위험도 분류 |
+| Phase 5 | `Tool_Phase_5.md` | 최종 보고서 및 독립 취약점 보고서 작성 |
+
+이 다섯 단계는 앞 단계 결과를 다음 단계 입력으로 사용하는 구조입니다. 따라서 설계상으로는 Recon 없이 Fuzzing만 수행하거나, 검증 없이 바로 보고서를 만드는 흐름을 허용하지 않습니다.
 
 ---
 
-## 2. 브랜치별 설명
+## Phase별 설명
 
-### `vul-web` — 이행 전 취약 웹사이트
+### Phase 1. Recon & OSINT
 
-`vul-web` 브랜치는 취약점 진단과 모의해킹 실습을 위한 교육용 가상자산 거래소 서비스입니다. 거래소, 은행, 관리자 기능이 포함되어 있으며, 보안 학습을 위해 일부 취약한 구현이나 미흡한 방어가 남아 있는 상태를 기준으로 사용됩니다. 이 브랜치는 "어떤 취약점이 존재할 수 있는가"를 직접 분석하고 검증하는 출발점 역할을 합니다.
+첫 단계에서는 대상 시스템의 공격면을 최대한 넓게 파악합니다. JS 번들, Source Map, 노출된 경로, 관리자 페이지, 숨겨진 API, 서버 헤더, CORS, SSL/TLS 정책, 인증 구조를 분석해 이후 단계의 우선순위를 정합니다. 이 단계의 핵심은 취약점 확정이 아니라 "어디를 먼저 봐야 하는가"를 구조화하는 것입니다.
 
-이 브랜치의 목적은 실제 서비스 운영이 아니라, 취약점 진단 교육용 환경을 제공하는 것입니다. 따라서 실서비스 수준의 보안을 보장하지 않으며, 일부 기능은 의도적으로 취약하거나 미완성된 방어 상태를 포함할 수 있습니다.
+### Phase 2. Advanced Fuzzing & Scanning
 
-주요 관찰 대상:
+두 번째 단계에서는 Phase 1에서 수집한 엔드포인트에 대해 공격 벡터별 탐침을 전수 수행합니다. XSS, CSRF, SQL Injection, 파라미터 조작, XXE, SSRF, 비즈니스 로직, 악성 파일 업로드, Open Redirect, Command Injection, Path Traversal 같은 벡터를 기준으로 신호를 수집합니다. 이 단계에서는 확정 판정보다 후보군 확보가 중요합니다.
 
-- 인증 및 인가 미흡
-- 관리자 기능 노출 가능성
-- 입력값 검증 부족
-- 파일 업로드 취약점 가능성
-- XSS, CSRF, 정보 노출 가능성
-- 세션 및 토큰 처리 취약성
+### Phase 3. Deep Logic & Auth Verification
 
-### `secure-web` — 이행 후 안전 웹사이트
+세 번째 단계에서는 후보군을 실제 취약점으로 확정할 수 있는지 재현 중심으로 검증합니다. ADMIN, MANAGER, STAFF, USER, 비인증 상태를 포함한 토큰 매트릭스를 구성해 접근제어, 인증 우회, IDOR, BAC, Race Condition을 교차 검증합니다. 이 단계에서 실증된 결과만 확정 취약점으로 취급합니다.
 
-`secure-web` 브랜치는 `vul-web`을 기반으로 취약점 조치와 보안 구조 개선을 적용한 이행 후 버전입니다. 거래소, 은행, 관리자 기능은 유지하되, 서비스 분리, 권한 검증, 민감정보 응답 통제, 업로드 파일 검증, 오류 메시지 정리, 코드 및 서버 정보 노출 차단 같은 조치가 반영되어 있습니다.
+### Phase 4. Triage & Threat Modeling
 
-이 브랜치는 단순히 "보안 기능을 조금 추가한 버전"이 아니라, 취약한 서비스가 실제로 어떤 수정 과정을 거쳐 더 안전한 구조로 전환되는지를 보여주는 결과물입니다. 따라서 `vul-web`과 `secure-web`을 비교하면 취약점 분석과 조치 이행 과정을 가장 명확하게 확인할 수 있습니다.
+네 번째 단계에서는 확정 취약점에 대해 CVSS v3.1 벡터를 산정하고, OWASP Top 10 2021 및 CWE ID와 연결합니다. 오탐과 방어 확인 항목도 함께 정리해 결과의 신뢰도를 높입니다. 즉, 이 단계는 발견보다 분류와 우선순위화가 중심입니다.
 
-주요 조치 방향:
+### Phase 5. Advanced Reporting
 
-- 관리자/사용자/은행 서비스 및 세션 분리
-- JWT 기반 인증 및 역할 기반 인가 강화
-- 입력값 유효성 검증 및 DTO 바인딩 적용
-- 파일 업로드 확장자 및 Magic Byte 검증
-- 민감정보 마스킹과 관리자 전용 언마스킹 분리
-- 오류 메시지, 파일 경로, 헤더, 코드 노출 차단
-- 토큰 정책 개선, 중복 로그인 방지, 이전 토큰 무효화
-- 회원가입/로그인 흐름 안정화 및 금융 처리 무결성 강화
-
-### `auto-script` — 취약점 진단 자동화 도구
-
-`auto-script` 브랜치는 웹 서비스 자체가 아니라, 취약점 진단 항목을 자동으로 점검하기 위한 보안 진단 도구입니다. 이 도구는 로컬, SSH, AWS SSM, Docker 환경을 통해 OS, 웹서버, DBMS, 클라우드 자산을 진단하고 결과 리포트를 자동으로 생성하는 것을 목표로 합니다.
-
-이 브랜치는 취약 웹사이트와 안전 웹사이트를 "진단 대상"으로 바라보는 관점에 가깝습니다. 즉, `vul-web`과 `secure-web`이 진단과 조치의 대상이라면, `auto-script`는 그러한 대상을 좀 더 체계적이고 반복 가능한 방식으로 점검하기 위한 자동화 도구입니다.
-
-주요 기능:
-
-- SK 표준 가이드 / 주요정보통신기반시설 가이드 선택 진단
-- 로컬, SSH, AWS SSM, Docker 연결 지원
-- OS, WebServer, DBMS, AWS 환경 진단
-- TXT, LOG, Excel 기반 리포트 자동 생성
-- GUI 실행 파일 제공 가능
+마지막 단계에서는 앞선 결과를 통합해 최종 보고서를 작성합니다. SK 28개 항목 기준 통합 보고서와, 각 취약점별 독립 보고서를 별도로 만드는 구조를 취합니다. 이 방식은 실무자용 종합 보고와 취약점 단건 보고를 분리해 전달하기 좋다는 장점이 있습니다.
 
 ---
 
-## 3. 전체 프로젝트 흐름
+## 산출물 구조
 
-| 단계 | 설명 |
-|------|------|
-| 1단계 | `vul-web`에서 취약한 서비스 구조와 취약점 포인트를 확인 |
-| 2단계 | 취약점 진단 항목 기준으로 문제를 분석하고 조치 방향 수립 |
-| 3단계 | `secure-web`에서 조치 이행 및 보안 구조 개선 반영 |
-| 4단계 | `auto-script`를 통해 진단 과정을 자동화하고 결과 리포트 생성 |
+AI Scanner 문서 체계가 전제하는 대표 산출물 구조는 아래와 같습니다.
 
-이 프로젝트는 단순히 웹사이트 하나를 만드는 흐름이 아니라, 취약한 상태의 서비스에서 시작해 조치가 반영된 서비스로 이동하고, 다시 그 과정을 자동 진단 도구와 연결하는 흐름을 갖습니다. 이 점이 일반적인 웹 개발 프로젝트와 가장 크게 다른 부분입니다.
+- `candidates/`: 퍼징 단계에서 수집된 의심 신호
+- `vulnerabilities/`: 검증을 거쳐 확정된 취약점
+- `mitigated/`: 방어가 확인된 항목
+- `logs/`: reasoning log, 분류 로그, 최종 인덱스 등 중간 결과
+- `reports/`: 취약점 단건 보고서
+- `FINAL_REPORT.md`: 통합 최종 보고서
 
----
-
-## 4. 웹 서비스 설명
-
-웹 서비스 영역은 `vul-web`과 `secure-web`에서 공통적으로 다루는 대상입니다.
-
-### Exchange
-
-| 항목 | 내용 |
-|------|------|
-| 대상 사용자 | 일반 사용자 |
-| 서비스 성격 | 가상자산 거래 메인 서비스 |
-| 주요 기능 | 시세 조회, 자산 조회, 주문, 거래내역, 커뮤니티, 이벤트, 고객지원 |
-
-### Bank
-
-| 항목 | 내용 |
-|------|------|
-| 대상 사용자 | 일반 사용자 |
-| 서비스 성격 | 금융 기능 분리 서비스 |
-| 주요 기능 | 계좌 조회, 입금, 출금, 이체 |
-
-### Admin
-
-| 항목 | 내용 |
-|------|------|
-| 대상 사용자 | 운영자, 관리자, 직원 |
-| 서비스 성격 | 관리자 전용 백오피스 |
-| 주요 기능 | 회원 관리, 신분증 승인, 자산 회수, 문의 처리, 직원 관리 |
+이 구조의 핵심은 후보군과 확정 취약점을 분리하는 점입니다. 자동진단에서 가장 큰 문제 중 하나가 오탐인데, 이 디렉터리의 설계는 이를 줄이기 위해 `탐지`와 `확정`을 분리해 두고 있습니다.
 
 ---
 
-## 5. 웹 서비스 기술 스택
+## 작성 원칙
 
-이 섹션은 현재 기준으로 `secure-web` 브랜치의 기술 스택을 기준으로 정리합니다. 과거 일부 문서에는 Next.js 기준 설명이 남아 있을 수 있지만, 현재 정리 기준은 `React (Vite)`입니다.
+각 Phase 문서는 공통적으로 몇 가지 원칙을 강하게 요구합니다.
 
-| 구분 | 기술 | 상세 내용 |
-|------|------|-----------|
-| Frontend | React 19 | 거래소, 은행, 관리자 UI를 구성하는 핵심 라이브러리 |
-| Frontend | TypeScript 5 | 화면 상태와 API 응답 모델링을 위한 정적 타입 시스템 |
-| Frontend | Vite 7 | 프론트엔드 개발 서버 및 빌드 도구 |
-| Frontend | React Router DOM 7 | 서비스별 화면 라우팅과 인증 흐름 분기 처리 |
-| Frontend | styled-components | 서비스별 UI 스타일 분리를 위한 CSS-in-JS 도구 |
-| Frontend | axios | 공통 API 호출, 인터셉터, 토큰 처리 |
-| Frontend | lightweight-charts | 거래소 차트 표현 |
-| Frontend | react-hook-form | 입력 중심 화면의 폼 상태 관리 |
-| Frontend | react-markdown / remark-gfm | 마크다운 콘텐츠 렌더링 |
-| Frontend | lucide-react | UI 아이콘 구성 |
-| Frontend | matter-js | 일부 인터랙티브 요소 구현 |
-| Backend | Java 17 | Spring Boot 3 계열과 호환되는 LTS 환경 |
-| Backend | Spring Boot 3.4.2 | 백엔드 핵심 프레임워크 |
-| Backend | Spring Web | REST API 처리 |
-| Backend | Spring Security | 인증, 인가, 역할 기반 접근 통제 |
-| Backend | Spring Data JPA | 엔티티-DB 매핑과 데이터 접근 처리 |
-| Backend | Spring Validation | DTO 입력값 유효성 검사 |
-| Backend | Spring OAuth2 Client | Kakao, Naver 소셜 로그인 연동 |
-| Backend | JJWT 0.11.5 | JWT 발급, 검증, 클레임 처리 |
-| Backend | Jsoup 1.18.3 | 사용자 입력 기반 HTML 정리 및 XSS 완화 |
-| Backend | Lombok | 반복 코드 감소 |
-| Backend | Spring Boot Actuator | 애플리케이션 상태 점검 지원 |
-| Database / Infra | Oracle Free 23.4 | 회원, 자산, 주문, 거래, 문의, 관리자 데이터 저장 |
-| Database / Infra | Hibernate / Oracle Dialect | Oracle 환경 ORM 지원 |
-| Database / Infra | Docker | 백엔드, 프론트엔드, DB 컨테이너 실행 기반 |
-| Database / Infra | Docker Compose | 다중 서비스 실행 구성 |
-| Database / Infra | OpenResty (Nginx) | 프론트엔드 정적 파일 서빙 및 SPA 라우팅 |
-| Database / Infra | Gradle | 백엔드 빌드와 의존성 관리 |
-| External API | Upbit Quotation API | 시세, 호가, 캔들, 체결 데이터 연동 |
+- 실제 통신과 응답을 기준으로 판단
+- 뇌피셜이나 프레임워크에 대한 막연한 신뢰 금지
+- reasoning log를 통해 판단 근거 기록
+- 정해진 단계 외 작업 금지
+- 오탐보다 미탐을 줄이기 위한 넓은 탐지 후 엄격한 검증
+- 최종 보고서는 Markdown 기반으로 일관되게 작성
+
+즉, AI Scanner는 단순 자동화보다도 "검증 가능한 자동화"를 지향합니다.
 
 ---
 
-## 6. 이행 후 브랜치(`secure-web`) 기준 주요 보안 조치
+## 적용 기준
 
-| 항목 | 내용 |
-|------|------|
-| 인증 방식 | JWT 기반 인증 |
-| 인가 방식 | 역할 기반 접근 제어 |
-| 세션 관리 | 관리자/사용자 세션 분리 |
-| 입력 통제 | DTO 바인딩 + 유효성 검증 |
-| 파일 통제 | 확장자 화이트리스트 + Magic Byte 검증 |
-| 민감정보 보호 | 응답 마스킹 + 언마스킹 권한 분리 |
-| 배포 보안 | 프로덕션 빌드 기반 정적 서빙 |
+이 문서 세트는 SK 진단 항목 체계와 OWASP, CWE, CVSS를 함께 사용합니다.
 
-주요 조치 방향:
+- SK 진단 항목: 국내 진단 기준에 맞춘 점검 체계
+- OWASP Top 10: 웹 취약점 분류 기준
+- CWE: 취약점 유형 식별 체계
+- CVSS v3.1: 위험도 점수화 기준
 
-- JWT 기반 인증과 역할 기반 인가
-- 관리자/사용자/은행 로그인 분리
-- 토큰 정책 개선과 이전 토큰 무효화
-- 입력값 검증과 DTO 바인딩
-- 업로드 파일 확장자 및 Magic Byte 검증
-- 민감정보 마스킹
-- 관리자 전용 언마스킹 API
-- 오류 메시지, 파일 경로, 헤더, 코드 노출 차단
-- race condition 및 금융 처리 무결성 보완
+이 조합을 통해 진단 결과를 단순 발견 목록이 아니라, 재현 가능하고 설명 가능한 보안 산출물로 바꾸는 것이 목표입니다.
 
 ---
 
-## 7. 자동 진단 도구(`auto-script`) 설명
+## 포함 문서
 
-| 항목 | 내용 |
-|------|------|
-| 프로젝트 성격 | 취약점 진단 자동화 도구 |
-| 적용 가이드 | SK 표준 가이드 / 주요정보통신기반시설 가이드 |
-| 진단 대상 | OS, WebServer, DBMS, Cloud(AWS) |
-| 연결 방식 | 로컬, SSH, AWS SSM, Docker |
-| 결과물 | LOG, TXT, Excel, Markdown 리포트 |
-
-자동 진단 도구는 웹 서비스 자체를 구현하는 브랜치가 아니라, 진단 과정을 반복 가능하게 만들기 위한 도구 브랜치입니다. 로컬 서버, 원격 서버, AWS 자원, Docker 컨테이너를 대상으로 진단을 수행하고, 결과를 리포트로 정리하는 데 초점을 둡니다.
-
-대표 진단 영역:
-
-- Linux / Windows 보안 설정
-- Nginx / IIS 웹서버 점검
-- MySQL / PostgreSQL / MSSQL / Oracle DBMS 점검
-- AWS IAM, S3, RDS, CloudTrail, 보안그룹, VPC 점검
+- [Tool_Phase_1.md](/Users/user/Desktop/desktop/CODE/SK_Rookies_File/project/최종%20프로젝트/Final_PJT/AI_Scanner/Tool_Phase_1.md)
+- [Tool_Phase_2.md](/Users/user/Desktop/desktop/CODE/SK_Rookies_File/project/최종%20프로젝트/Final_PJT/AI_Scanner/Tool_Phase_2.md)
+- [Tool_Phase_3.md](/Users/user/Desktop/desktop/CODE/SK_Rookies_File/project/최종%20프로젝트/Final_PJT/AI_Scanner/Tool_Phase_3.md)
+- [Tool_Phase_4.md](/Users/user/Desktop/desktop/CODE/SK_Rookies_File/project/최종%20프로젝트/Final_PJT/AI_Scanner/Tool_Phase_4.md)
+- [Tool_Phase_5.md](/Users/user/Desktop/desktop/CODE/SK_Rookies_File/project/최종%20프로젝트/Final_PJT/AI_Scanner/Tool_Phase_5.md)
 
 ---
 
-## 8. 참고 문서
+## 참고
 
-- `secure-web` 관련 문서
-  - [docs/security_exchange.md](docs/security_exchange.md)
-  - [docs/security_bank.md](docs/security_bank.md)
-  - [docs/security_admin.md](docs/security_admin.md)
-  - [docs/api_spec.md](docs/api_spec.md)
-  - [docs/system_architecture_analysis.md](docs/system_architecture_analysis.md)
-  - [docs/project_requirements.md](docs/project_requirements.md)
-  - [docs/privacy_policy.md](docs/privacy_policy.md)
-
----
-
-## 9. 주의 사항
-
-- `vul-web`은 교육용 취약 환경을 포함하므로 실서비스에 사용하면 안 됩니다.
-- `secure-web`은 이행 후 버전이지만, 교육용 프로젝트라는 성격 자체는 유지됩니다.
-- 문서 일부에는 과거 `Next.js` 기반 설명이 남아 있을 수 있으나, 현재 웹 서비스 기준 기술 스택은 `React (Vite)`입니다.
-- `main` 브랜치는 통합 안내용이며, 실제 코드 검토는 각 브랜치에서 확인하는 것이 맞습니다.
-
----
-
-## 10. 팀
-
-- 김동현(부팀장)
-- 김하늘
-- 김한수
-- 김현진
-- 박지빈(팀장)
-- 박찬웅
-- 신동원
-- 우혜미
-- 전소원
+이 디렉터리는 AI 자동진단 자체를 설명하는 문서 공간입니다. 통합 프로젝트 전체 설명, 취약 웹사이트와 안전 웹사이트 비교, 브랜치 가이드는 별도 README에서 다루고, 여기서는 AI 진단 절차와 산출물 기준만 유지하는 편이 맞습니다.
